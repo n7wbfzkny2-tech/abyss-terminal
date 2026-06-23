@@ -30,6 +30,20 @@ export default async function handler(req, res) {
       return;
     }
 
+    // crude oil via API Ninjas (key stored in Vercel env var OIL_API_KEY): /api/mexc?path=oil&symbol=crude_oil
+    if (path === "oil") {
+      const name = (rest.symbol || "crude_oil"); // crude_oil = WTI, brent_crude_oil = Brent
+      const key = process.env.OIL_API_KEY;
+      if (!key) { res.status(200).json({ price: null, error: "no key" }); return; }
+      const or = await fetch("https://api.api-ninjas.com/v1/commodityprice?name=" + encodeURIComponent(name), {
+        headers: { "X-Api-Key": key },
+      });
+      const otext = await or.text();
+      res.setHeader("Cache-Control", "s-maxage=60, stale-while-revalidate=120");
+      res.status(or.status).setHeader("Content-Type", "application/json").send(otext);
+      return;
+    }
+
     if (!ALLOWED.has(path)) {
       res.status(400).json({ error: "path not allowed", path });
       return;
