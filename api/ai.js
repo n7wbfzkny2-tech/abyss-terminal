@@ -10,7 +10,7 @@ export default async function handler(req, res) {
   if (req.method !== "POST") { res.status(405).json({ error: "POST only" }); return; }
 
   const key = process.env.GEMINI_API_KEY;
-  if (!key) { res.status(200).json({ text: "", error: "no key" }); return; }
+  if (!key) { res.status(200).json({ text: "", error: "NO_KEY: 環境變數 GEMINI_API_KEY 沒讀到（檢查名稱拼字、是否重新部署）" }); return; }
 
   try {
     // body may arrive parsed or as a string depending on runtime
@@ -31,13 +31,15 @@ export default async function handler(req, res) {
     });
     const data = await r.json();
     if (!r.ok) {
-      res.status(200).json({ text: "", error: (data.error && data.error.message) || ("status " + r.status) });
+      const msg = (data.error && data.error.message) || ("status " + r.status);
+      res.status(200).json({ text: "", error: "GEMINI_" + r.status + ": " + msg });
       return;
     }
     const text = (((data.candidates || [])[0] || {}).content || {}).parts?.map((p) => p.text || "").join("") || "";
+    if (!text) { res.status(200).json({ text: "", error: "EMPTY: Gemini 回傳空白（可能觸發安全過濾或額度用盡）" }); return; }
     res.setHeader("Cache-Control", "no-store");
     res.status(200).json({ text });
   } catch (e) {
-    res.status(200).json({ text: "", error: String(e) });
+    res.status(200).json({ text: "", error: "EXCEPTION: " + String(e) });
   }
 }
