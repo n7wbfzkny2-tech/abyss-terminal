@@ -44,6 +44,19 @@ export default async function handler(req, res) {
       return;
     }
 
+    // MEXC futures/contract ticker (one call gives fundingRate + holdVol[OI] + lastPrice + riseFallRate)
+    // /api/mexc?path=futticker&symbol=BTC_USDT
+    if (path === "futticker") {
+      const sym = (rest.symbol || "BTC_USDT").toUpperCase();
+      const fr = await fetch("https://contract.mexc.com/api/v1/contract/ticker?symbol=" + sym, {
+        headers: { "Content-Type": "application/json" },
+      });
+      const ftext = await fr.text();
+      res.setHeader("Cache-Control", "s-maxage=15, stale-while-revalidate=30");
+      res.status(fr.status).setHeader("Content-Type", "application/json").send(ftext);
+      return;
+    }
+
     if (!ALLOWED.has(path)) {
       res.status(400).json({ error: "path not allowed", path });
       return;
