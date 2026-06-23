@@ -2,6 +2,8 @@
 // The Gemini API key is stored in the Vercel env var GEMINI_API_KEY (never in the frontend).
 // Frontend POSTs { prompt: "..." } to /api/ai and gets back { text: "..." }.
 
+export const config = { maxDuration: 30 }; // allow up to 30s for longer AI answers
+
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
@@ -26,7 +28,7 @@ export default async function handler(req, res) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: { temperature: 0.7, maxOutputTokens: 1024 },
+        generationConfig: { temperature: 0.8, maxOutputTokens: 2048 },
       }),
     });
     const data = await r.json();
